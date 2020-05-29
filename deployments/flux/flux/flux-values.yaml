@@ -1,8 +1,5 @@
 helmOperator:
   create: false
-#
-# @CHANGEME - Update url to your public repo URL
-#
 git:
   url: "git@github.com:narimantos/k3s-gitops-arm.git"
   branch: master
