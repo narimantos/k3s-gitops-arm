@@ -10,8 +10,8 @@
 #
 # @CHANGEME - Update USER to your RPi SSH user
 #
-USER="devin"
-K3S_VERSION="v1.17.3+k3s1"
+USER="ubuntu"
+K3S_VERSION="v1.17.5+k3s1"
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
 ANSIBLE_INVENTORY="${REPO_ROOT}"/ansible/inventory
@@ -37,34 +37,34 @@ message() {
   echo "######################################################################"
 }
 
-k3sMasterNode() {
-    message "Installing k3s master to ${K3S_MASTER}"
-    k3sup install --ip "${K3S_MASTER}" \
-        --k3s-version "${K3S_VERSION}" \
-        --user "${USER}" \
-        --k3s-extra-args "--no-deploy servicelb --no-deploy traefik --no-deploy metrics-server --default-local-storage-path /k3s-local-storage"
-    mkdir -p ~/.kube
-    mv ./kubeconfig ~/.kube/config
-    sleep 10
-}
+# k3sMasterNode() {
+#     message "Installing k3s master to ${K3S_MASTER}"
+#     k3sup install --ip "${K3S_MASTER}" \
+#         --k3s-version "${K3S_VERSION}" \
+#         --user "${USER}" \
+#         --k3s-extra-args "--no-deploy servicelb --no-deploy traefik --no-deploy metrics-server --default-local-storage-path /k3s-local-storage"
+#     mkdir -p ~/.kube
+#     mv ./kubeconfig ~/.kube/config
+#     sleep 10
+# }
 
-ks3WorkerNodes() {
-    for worker in $K3S_WORKERS; do
-        message "Joining ${worker} to ${K3S_MASTER}"
-        k3sup join --ip "${worker}" \
-            --server-ip "${K3S_MASTER}" \
-            --k3s-version "${K3S_VERSION}" \
-            --user "${USER}"
-            ## Does not work :(
-            #--k3s-extra-args "--node-label role.node.kubernetes.io/worker=worker"
+# ks3WorkerNodes() {
+#     for worker in $K3S_WORKERS; do
+#         message "Joining ${worker} to ${K3S_MASTER}"
+#         k3sup join --ip "${worker}" \
+#             --server-ip "${K3S_MASTER}" \
+#             --k3s-version "${K3S_VERSION}" \
+#             --user "${USER}"
+#             ## Does not work :(
+#             #--k3s-extra-args "--node-label role.node.kubernetes.io/worker=worker"
 
-        sleep 10
+#         sleep 10
 
-        message "Labeling ${worker} as node-role.kubernetes.io/worker=worker"
-        hostname=$(ansible-inventory -i ${ANSIBLE_INVENTORY} --list | jq -r --arg k3s_worker "$worker" '._meta[] | .[$k3s_worker].hostname')
-        kubectl label node ${hostname} node-role.kubernetes.io/worker=worker
-    done
-}
+#         message "Labeling ${worker} as node-role.kubernetes.io/worker=worker"
+#         hostname=$(ansible-inventory -i ${ANSIBLE_INVENTORY} --list | jq -r --arg k3s_worker "$worker" '._meta[] | .[$k3s_worker].hostname')
+#         kubectl label node ${hostname} node-role.kubernetes.io/worker=worker
+#     done
+# }
 
 installFlux() {
     message "Installing flux"
@@ -91,11 +91,11 @@ addDeployKey() {
     FLUX_KEY=$(kubectl -n flux logs deployment/flux | grep identity.pub | cut -d '"' -f2)
 
     message "Adding the key to github automatically"
-    "${REPO_ROOT}"/hack/add-repo-key.sh "${FLUX_KEY}"
+    "${REPO_ROOT}"/setup/add-repo-key.sh "${FLUX_KEY}"
 }
 
-k3sMasterNode
-ks3WorkerNodes
+# k3sMasterNode
+# ks3WorkerNodes
 installFlux
 addDeployKey
 
